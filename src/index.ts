@@ -3,6 +3,7 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import { MongoClient } from 'mongodb';
 import dotenv from 'dotenv';
+import moviesRouter from './routes/movies';
 
 // 加載環境變量
 dotenv.config();
@@ -29,10 +30,14 @@ const mongoUri = process.env.MONGODB_URI || '';
 MongoClient.connect(mongoUri)
   .then(client => {
     // 連接成功後，選擇一個數據庫來使用
-    db = client.db('movieRental');  // 這裡的 'movieRental' 是數據庫名稱，你可以根據需要修改
+    const db = client.db('movieRental');  // 這裡的 'movieRental' 是數據庫名稱，你可以根據需要修改
+    app.locals.db = db;  // 将 db 存储在 app.locals 中
     console.log('Connected to Database');
   })
   .catch(error => console.error('Failed to connect to the database', error));
+
+// 使用 '/api/movies' 路由
+app.use('/api/movies', moviesRouter);
 
 // 設置基本的測試路由
 app.get('/', (req, res) => {
