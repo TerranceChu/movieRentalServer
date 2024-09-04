@@ -57,6 +57,7 @@ setupSwagger(app);
 if (process.env.NODE_ENV !== 'test') {
   app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
+    console.log(`Swagger API docs available at http://localhost:${port}/api-docs`);
   });
 }
 

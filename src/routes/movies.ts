@@ -5,26 +5,38 @@ import Joi from 'joi';
 
 const router = Router();
 
+// 定义电影数据的验证规则
 const movieSchema = Joi.object({
   title: Joi.string().required(),
   year: Joi.number().integer().min(1888).required(),
   genre: Joi.string().required(),
   rating: Joi.number().min(0).max(10).required(),
-  status:Joi.string().required()
+  status: Joi.string().valid('available', 'pending', 'offline').required()
 });
 
-// 測試MongoDB連接，並從數據庫中獲取電影列表
-router.get('/', async (req, res) => {
-  try {
-    const db = req.app.locals.db;
-    const movies = await db.collection('movies').find().toArray();
-    res.json(movies);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch movies' });
-  }
-});
+/**
+ * @swagger
+ * tags:
+ *   name: Movies
+ *   description: API for managing movies
+ */
 
-// 獲取所有電影
+/**
+ * @swagger
+ * /api/movies:
+ *   get:
+ *     summary: Retrieve a list of movies
+ *     tags: [Movies]
+ *     responses:
+ *       200:
+ *         description: A list of movies.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ */
 router.get('/', async (req, res) => {
   try {
     const movies = await getAllMovies();
@@ -34,7 +46,25 @@ router.get('/', async (req, res) => {
   }
 });
 
-// 根據ID獲取單個電影
+/**
+ * @swagger
+ * /api/movies/{id}:
+ *   get:
+ *     summary: Get a movie by ID
+ *     tags: [Movies]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The movie ID
+ *     responses:
+ *       200:
+ *         description: Movie data
+ *       404:
+ *         description: Movie not found
+ */
 router.get('/:id', async (req, res) => {
   const movieId = req.params.id;
   
@@ -53,8 +83,42 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-
-// 添加新電影
+/**
+ * @swagger
+ * /api/movies:
+ *   post:
+ *     summary: Add a new movie
+ *     tags: [Movies]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *               - year
+ *               - genre
+ *               - rating
+ *               - status
+ *             properties:
+ *               title:
+ *                 type: string
+ *               year:
+ *                 type: integer
+ *               genre:
+ *                 type: string
+ *               rating:
+ *                 type: number
+ *               status:
+ *                 type: string
+ *                 enum: [available, pending, offline]
+ *     responses:
+ *       201:
+ *         description: Movie created successfully
+ *       400:
+ *         description: Invalid input data
+ */
 router.post('/', async (req, res) => {
   const { error } = movieSchema.validate(req.body);
   
@@ -70,7 +134,45 @@ router.post('/', async (req, res) => {
   }
 });
 
-// 更新電影信息
+/**
+ * @swagger
+ * /api/movies/{id}:
+ *   put:
+ *     summary: Update a movie by ID
+ *     tags: [Movies]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The movie ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *               year:
+ *                 type: integer
+ *               genre:
+ *                 type: string
+ *               rating:
+ *                 type: number
+ *               status:
+ *                 type: string
+ *                 enum: [available, pending, offline]
+ *     responses:
+ *       200:
+ *         description: Movie updated successfully
+ *       400:
+ *         description: Invalid movie ID format or invalid data
+ *       404:
+ *         description: Movie not found
+ */
 router.put('/:id', async (req, res) => {
   const movieId = req.params.id;
 
@@ -78,11 +180,11 @@ router.put('/:id', async (req, res) => {
     return res.status(400).json({ error: 'Invalid movie ID format' });
   }
 
-  //const { error } = movieSchema.validate(req.body);
-
- // if (error) {
- //   return res.status(400).json({ error: error.details[0].message });
-//  }
+  const { error } = movieSchema.validate(req.body);
+  
+  if (error) {
+    return res.status(400).json({ error: error.details[0].message });
+  }
 
   try {
     const result = await updateMovie(movieId, req.body);
@@ -95,7 +197,27 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// 刪除電影
+/**
+ * @swagger
+ * /api/movies/{id}:
+ *   delete:
+ *     summary: Delete a movie by ID
+ *     tags: [Movies]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The movie ID
+ *     responses:
+ *       200:
+ *         description: Movie deleted successfully
+ *       400:
+ *         description: Invalid movie ID format
+ *       404:
+ *         description: Movie not found
+ */
 router.delete('/:id', async (req, res) => {
   const movieId = req.params.id;
 
