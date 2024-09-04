@@ -1,8 +1,17 @@
 import { Router } from 'express';
 import { ObjectId } from 'mongodb';
 import { getAllMovies, getMovieById, addMovie, updateMovie, deleteMovie } from '../services/movieService';
+import Joi from 'joi';
 
 const router = Router();
+
+const movieSchema = Joi.object({
+  title: Joi.string().required(),
+  year: Joi.number().integer().min(1888).required(),
+  genre: Joi.string().required(),
+  rating: Joi.number().min(0).max(10).required(),
+  status:Joi.boolean().required()
+});
 
 // 測試MongoDB連接，並從數據庫中獲取電影列表
 router.get('/', async (req, res) => {
@@ -47,6 +56,12 @@ router.get('/:id', async (req, res) => {
 
 // 添加新電影
 router.post('/', async (req, res) => {
+  const { error } = movieSchema.validate(req.body);
+  
+  if (error) {
+    return res.status(400).json({ error: error.details[0].message });
+  }
+
   try {
     const result = await addMovie(req.body);
     res.status(201).json(result);
@@ -61,6 +76,12 @@ router.put('/:id', async (req, res) => {
 
   if (!ObjectId.isValid(movieId)) {
     return res.status(400).json({ error: 'Invalid movie ID format' });
+  }
+
+  const { error } = movieSchema.validate(req.body);
+
+  if (error) {
+    return res.status(400).json({ error: error.details[0].message });
   }
 
   try {
