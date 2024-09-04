@@ -10,7 +10,7 @@ const movieSchema = Joi.object({
   year: Joi.number().integer().min(1888).required(),
   genre: Joi.string().required(),
   rating: Joi.number().min(0).max(10).required(),
-  status:Joi.boolean().required()
+  status:Joi.string().required()
 });
 
 // 測試MongoDB連接，並從數據庫中獲取電影列表
@@ -78,11 +78,11 @@ router.put('/:id', async (req, res) => {
     return res.status(400).json({ error: 'Invalid movie ID format' });
   }
 
-  const { error } = movieSchema.validate(req.body);
+  //const { error } = movieSchema.validate(req.body);
 
-  if (error) {
-    return res.status(400).json({ error: error.details[0].message });
-  }
+ // if (error) {
+ //   return res.status(400).json({ error: error.details[0].message });
+//  }
 
   try {
     const result = await updateMovie(movieId, req.body);
