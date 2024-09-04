@@ -8,18 +8,21 @@ dotenv.config();
 
 let client: MongoClient;
 let movieId: string;
+let server: any; // 用於存儲伺服器實例
 
 beforeAll(async () => {
   // 建立 MongoDB Atlas 的連接
-  client = await MongoClient.connect(process.env.MONGODB_URI || '', {
-    // 最新版本不再需要使用 useNewUrlParser 和 useUnifiedTopology
-  });
+  client = await MongoClient.connect(process.env.MONGODB_URI || '', {});
   const db = client.db('movieRental');
-  app.locals.db = db; // 將數據庫連接存儲到 app.locals 中
+  app.locals.db = db;
+
+  // 啟動伺服器
+  server = app.listen(4000); // 使用測試專用端口
 });
 
 afterAll(async () => {
   await client.close(); // 測試結束後關閉數據庫連接
+  server.close(); // 測試結束後關閉伺服器
 });
 
 describe('Movie API Endpoints', () => {

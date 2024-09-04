@@ -48,11 +48,11 @@ app.get('/', (req, res) => {
   res.send('Welcome to the Movie Rental API');
 });
 
-// 在非測試環境下啟動伺服器
+// 只有在非測試環境下才啟動伺服器
 if (process.env.NODE_ENV !== 'test') {
   app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
   });
 }
 
-export { app }; // 將 app 導出，這樣測試可以使用.導出 server 以便測試中關閉它
+export { app };
