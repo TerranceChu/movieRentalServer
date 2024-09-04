@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { ObjectId } from 'mongodb';
 import { getAllMovies, getMovieById, addMovie, updateMovie, deleteMovie } from '../services/movieService';
 
 const router = Router();
@@ -26,8 +27,14 @@ router.get('/', async (req, res) => {
 
 // 根據ID獲取單個電影
 router.get('/:id', async (req, res) => {
+  const movieId = req.params.id;
+  
+  if (!ObjectId.isValid(movieId)) {
+    return res.status(400).json({ error: 'Invalid movie ID format' });
+  }
+
   try {
-    const movie = await getMovieById(req.params.id);
+    const movie = await getMovieById(movieId);
     if (!movie) {
       return res.status(404).json({ error: 'Movie not found' });
     }
@@ -36,6 +43,7 @@ router.get('/:id', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch movie' });
   }
 });
+
 
 // 添加新電影
 router.post('/', async (req, res) => {
@@ -49,8 +57,14 @@ router.post('/', async (req, res) => {
 
 // 更新電影信息
 router.put('/:id', async (req, res) => {
+  const movieId = req.params.id;
+
+  if (!ObjectId.isValid(movieId)) {
+    return res.status(400).json({ error: 'Invalid movie ID format' });
+  }
+
   try {
-    const result = await updateMovie(req.params.id, req.body);
+    const result = await updateMovie(movieId, req.body);
     if (result.matchedCount === 0) {
       return res.status(404).json({ error: 'Movie not found' });
     }
@@ -62,8 +76,14 @@ router.put('/:id', async (req, res) => {
 
 // 刪除電影
 router.delete('/:id', async (req, res) => {
+  const movieId = req.params.id;
+
+  if (!ObjectId.isValid(movieId)) {
+    return res.status(400).json({ error: 'Invalid movie ID format' });
+  }
+
   try {
-    const result = await deleteMovie(req.params.id);
+    const result = await deleteMovie(movieId);
     if (result.deletedCount === 0) {
       return res.status(404).json({ error: 'Movie not found' });
     }
