@@ -8,6 +8,8 @@ import { setDatabase } from './services/movieService';
 
 import moviesRouter from './routes/movies';
 
+import { setupSwagger } from './utils/swagger';
+
 // 加載環境變量
 dotenv.config();
 
@@ -47,6 +49,9 @@ app.use('/api/movies', moviesRouter);
 app.get('/', (req, res) => {
   res.send('Welcome to the Movie Rental API');
 });
+
+// 初始化Swagger文档
+setupSwagger(app);
 
 // 只有在非測試環境下才啟動伺服器
 if (process.env.NODE_ENV !== 'test') {
