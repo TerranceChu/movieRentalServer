@@ -48,6 +48,9 @@ app.get('/', (req, res) => {
   res.send('Welcome to the Movie Rental API');
 });
 
+// 將 app 導出以便在測試中使用
+export { app };
+
 // 啟動服務器並監聽指定端口
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
