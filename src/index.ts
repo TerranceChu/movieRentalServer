@@ -1,8 +1,11 @@
 import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
-import { MongoClient } from 'mongodb';
 import dotenv from 'dotenv';
+
+import { MongoClient } from 'mongodb';
+import { setDatabase } from './services/movieService';
+
 import moviesRouter from './routes/movies';
 
 // 加載環境變量
@@ -31,6 +34,7 @@ MongoClient.connect(mongoUri)
   .then(client => {
     // 連接成功後，選擇一個數據庫來使用
     const db = client.db('movieRental');  // 這裡的 'movieRental' 是數據庫名稱，你可以根據需要修改
+    setDatabase(db); // 設置數據庫對象到服務層
     app.locals.db = db;  // 将 db 存储在 app.locals 中
     console.log('Connected to Database');
   })
