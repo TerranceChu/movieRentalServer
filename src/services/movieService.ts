@@ -40,7 +40,7 @@ export const deleteMovie = async (id: string) => {
   return await db.collection('movies').deleteOne({ _id: new ObjectId(id) });
 };
 
-// 儲存圖片路徑到 MongoDB
+// 儲存圖片路徑到 MongoDB 的 "posters" 集合中
 export const addMoviePosterPath = async (path: string) => {
   const poster = {
     posterPath: path,
@@ -48,3 +48,13 @@ export const addMoviePosterPath = async (path: string) => {
   };
   return await db.collection('posters').insertOne(poster);
 };
+
+// 更新電影資料中的 posterPath 字段，將上傳的圖片路徑與電影關聯
+export const addMoviePosterToMovie = async (movieId: string, path: string) => {
+  const result = await db.collection('movies').updateOne(
+    { _id: new ObjectId(movieId) },  // 查找指定ID的電影
+    { $set: { posterPath: path } }   // 更新圖片路徑
+  );
+  return result;
+};
+

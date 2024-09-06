@@ -1,9 +1,8 @@
 import request from 'supertest';
-import { app } from '../index'; // 引入 server
-import { MongoClient } from 'mongodb';
-import dotenv from 'dotenv';
-import { ObjectId } from 'mongodb';
+import { app } from '../index'; // 引入 Express 應用
+import { MongoClient, ObjectId } from 'mongodb';
 import path from 'path';
+import dotenv from 'dotenv';
 
 dotenv.config();
 
@@ -73,16 +72,41 @@ describe('Movie API Endpoints', () => {
   });
 });
 
-describe('Movie API - Upload Poster', () => {
-  // 測試成功上傳圖片
-  it('should upload a movie poster successfully', async () => {
-    const res = await request(app)
-      .post('/api/movies/upload')  // API 端點，用於處理文件上傳
-      .attach('poster', path.resolve(__dirname, 'sample-image.jpg'));  // 附加本地圖片文件
+describe('Movie API - Upload and associate poster with movie', () => {
+  let movieIdForPoster: string;
 
-    // 檢查狀態碼與回應內容
+  beforeAll(async () => {
+    // 在測試開始時創建一部電影
+    const newMovie = {
+      title: 'Test Movie for Poster',
+      year: 2021,
+      genre: 'Action',
+      rating: 8.5,
+      status: 'available'
+    };
+    const res = await request(app)
+      .post('/api/movies')
+      .send(newMovie);
+    
+    movieIdForPoster = res.body.insertedId;  // 保存電影的ID供後續測試使用
+  });
+
+  it('should upload a poster and associate it with the movie', async () => {
+    const res = await request(app)
+      .post(`/api/movies/${movieIdForPoster}/upload`)
+      .attach('poster', path.resolve(__dirname, 'sample-image.jpg'));  // 本地樣本圖片
+
     expect(res.statusCode).toEqual(200);
     expect(res.body).toHaveProperty('message', 'Poster uploaded successfully');
-    expect(res.body).toHaveProperty('path');  // 驗證路徑是否返回
+    expect(res.body).toHaveProperty('path');
+
+    // 檢查數據庫是否更新了電影的圖片路徑
+    const movie = await app.locals.db.collection('movies').findOne({ _id: new ObjectId(movieIdForPoster) });
+    expect(movie).toHaveProperty('posterPath', res.body.path);
+  });
+
+  afterAll(async () => {
+    // 測試結束後刪除電影
+    await app.locals.db.collection('movies').deleteOne({ _id: new ObjectId(movieIdForPoster) });
   });
 });

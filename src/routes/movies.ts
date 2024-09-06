@@ -4,6 +4,8 @@ import { getAllMovies, getMovieById, addMovie, updateMovie, deleteMovie } from '
 import Joi from 'joi';
 import upload from '../utils/upload';
 import { addMoviePosterPath } from '../services/movieService';
+import { addMoviePosterToMovie } from '../services/movieService';  
+
 
 const router = Router();
 
@@ -240,32 +242,45 @@ router.delete('/:id', async (req, res) => {
 
 /**
  * @swagger
- * /api/movies/upload:
+ * /api/movies/{id}/upload:
  *   post:
- *     summary: Upload a movie poster
+ *     summary: Upload a movie poster and associate it with a movie
  *     tags: [Movies]
  *     consumes:
  *       - multipart/form-data
  *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The movie ID
  *       - in: formData
  *         name: poster
  *         type: file
  *         description: The movie poster to upload
  *     responses:
  *       200:
- *         description: Poster uploaded successfully
+ *         description: Poster uploaded successfully and associated with the movie
  */
-router.post('/upload', upload.single('poster'), async (req, res) => {
+router.post('/:id/upload', upload.single('poster'), async (req, res) => {
+  const movieId = req.params.id;
+
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });
   }
 
   try {
-    // 儲存圖片路徑到數據庫
-    const result = await addMoviePosterPath(req.file.path);
+    // 儲存圖片路徑到特定電影
+    const result = await addMoviePosterToMovie(movieId, req.file.path);
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: 'Movie not found' });
+    }
+
     res.status(200).json({ message: 'Poster uploaded successfully', path: req.file.path });
   } catch (error) {
     res.status(500).json({ error: 'Failed to upload poster' });
   }
 });
+
 export default router;
