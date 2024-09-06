@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { ObjectId } from 'mongodb';
 import { getAllMovies, getMovieById, addMovie, updateMovie, deleteMovie } from '../services/movieService';
 import Joi from 'joi';
+import upload from '../utils/upload';
 
 const router = Router();
 
@@ -234,6 +235,30 @@ router.delete('/:id', async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: 'Failed to delete movie' });
   }
+});
+
+/**
+ * @swagger
+ * /api/movies/upload:
+ *   post:
+ *     summary: Upload a movie poster
+ *     tags: [Movies]
+ *     consumes:
+ *       - multipart/form-data
+ *     parameters:
+ *       - in: formData
+ *         name: poster
+ *         type: file
+ *         description: The movie poster to upload
+ *     responses:
+ *       200:
+ *         description: Poster uploaded successfully
+ */
+router.post('/upload', upload.single('poster'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded' });
+  }
+  res.status(200).json({ message: 'Poster uploaded successfully', path: req.file.path });
 });
 
 export default router;
