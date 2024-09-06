@@ -8,6 +8,7 @@ dotenv.config();
 
 let client: MongoClient;
 let movieId: string;
+let token: string; // 用於存儲JWT token
 let server: any; // 用於存儲伺服器實例
 
 beforeAll(async () => {
@@ -15,6 +16,17 @@ beforeAll(async () => {
   client = await MongoClient.connect(process.env.MONGODB_URI || '', {});
   const db = client.db('movieRental');
   app.locals.db = db;
+
+  // 註冊新用戶並獲取JWT token
+  await request(app)
+    .post('/api/auth/register')
+    .send({ username: 'testuser', password: 'password123' });
+
+  const res = await request(app)
+    .post('/api/auth/login')
+    .send({ username: 'testuser', password: 'password123' });
+
+  token = res.body.token;
 
   // 啟動伺服器
   server = app.listen(4000); // 使用測試專用端口
@@ -25,9 +37,9 @@ afterAll(async () => {
   server.close(); // 測試結束後關閉伺服器
 });
 
-describe('Movie API Endpoints', () => {
+describe('Protected Movie API Endpoints', () => {
 
-  it('should add a new movie', async () => {
+  it('should add a new movie with JWT token', async () => {
     const newMovie = {
       title: 'Test Movie',
       year: 2021,
@@ -35,22 +47,43 @@ describe('Movie API Endpoints', () => {
       rating: 8.5,
       status: 'available'
     };
+
     const res = await request(app)
       .post('/api/movies')
+      .set('Authorization', `Bearer ${token}`)  // 設置JWT token到Authorization標頭
       .send(newMovie);
-    
+
     expect(res.statusCode).toEqual(201);
     expect(res.body).toHaveProperty('insertedId');  // 確認是否有 insertedId
     movieId = res.body.insertedId; // 儲存 insertedId 以便後續測試使用
   });
 
+  it('should fail to add a movie without JWT token', async () => {
+    const newMovie = {
+      title: 'Unauthorized Movie',
+      year: 2022,
+      genre: 'Comedy',
+      rating: 7.5,
+      status: 'available'
+    };
+
+    const res = await request(app)
+      .post('/api/movies')  // 不帶JWT token
+      .send(newMovie);
+
+    expect(res.statusCode).toEqual(401);  // 應該返回401 Unauthorized
+  });
+
   it('should fetch the newly added movie by ID', async () => {
-    const res = await request(app).get(`/api/movies/${movieId}`);
+    const res = await request(app)
+      .get(`/api/movies/${movieId}`)
+      .set('Authorization', `Bearer ${token}`);  // 添加JWT token
+
     expect(res.statusCode).toEqual(200);
     expect(res.body).toHaveProperty('_id', new ObjectId(movieId).toString());  // 確認 ID 一致性
   });
 
-  it('should update the movie by ID', async () => {
+  it('should update the movie with JWT token', async () => {
     const updatedMovie = {
       title: 'Updated Movie',
       year: 2022,
@@ -58,17 +91,46 @@ describe('Movie API Endpoints', () => {
       rating: 9.0,
       status: 'available'
     };
+
     const res = await request(app)
       .put(`/api/movies/${movieId}`)
+      .set('Authorization', `Bearer ${token}`)  // 添加JWT token
       .send(updatedMovie);
+
     expect(res.statusCode).toEqual(200);
     expect(res.body).toHaveProperty('message', 'Movie updated successfully');
   });
 
-  it('should delete the movie by ID', async () => {
-    const res = await request(app).delete(`/api/movies/${movieId}`);
+  it('should fail to update the movie without JWT token', async () => {
+    const updatedMovie = {
+      title: 'Unauthorized Update',
+      year: 2022,
+      genre: 'Thriller',
+      rating: 8.0,
+      status: 'available'
+    };
+
+    const res = await request(app)
+      .put(`/api/movies/${movieId}`)  // 不帶JWT token
+      .send(updatedMovie);
+
+    expect(res.statusCode).toEqual(401);  // 應該返回401 Unauthorized
+  });
+
+  it('should delete the movie with JWT token', async () => {
+    const res = await request(app)
+      .delete(`/api/movies/${movieId}`)
+      .set('Authorization', `Bearer ${token}`);  // 添加JWT token
+
     expect(res.statusCode).toEqual(200);
     expect(res.body).toHaveProperty('message', 'Movie deleted successfully');
+  });
+
+  it('should fail to delete the movie without JWT token', async () => {
+    const res = await request(app)
+      .delete(`/api/movies/${movieId}`);  // 不帶JWT token
+
+    expect(res.statusCode).toEqual(401);  // 應該返回401 Unauthorized
   });
 });
 
@@ -86,14 +148,16 @@ describe('Movie API - Upload and associate poster with movie', () => {
     };
     const res = await request(app)
       .post('/api/movies')
+      .set('Authorization', `Bearer ${token}`)  // 添加JWT token
       .send(newMovie);
-    
+
     movieIdForPoster = res.body.insertedId;  // 保存電影的ID供後續測試使用
   });
 
   it('should upload a poster and associate it with the movie', async () => {
     const res = await request(app)
       .post(`/api/movies/${movieIdForPoster}/upload`)
+      .set('Authorization', `Bearer ${token}`)  // 添加JWT token
       .attach('poster', path.resolve(__dirname, 'sample-image.jpg'));  // 本地樣本圖片
 
     expect(res.statusCode).toEqual(200);

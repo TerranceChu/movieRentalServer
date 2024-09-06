@@ -5,7 +5,7 @@ import Joi from 'joi';
 import upload from '../utils/upload';
 import { addMoviePosterPath } from '../services/movieService';
 import { addMoviePosterToMovie } from '../services/movieService';  
-
+import { authenticateJWT } from '../utils/authMiddleware';
 
 const router = Router();
 
@@ -123,7 +123,8 @@ router.get('/:id', async (req, res) => {
  *       400:
  *         description: Invalid input data
  */
-router.post('/', async (req, res) => {
+// 添加新電影的路由，僅允許已驗證的用戶訪問
+router.post('/', authenticateJWT, async (req, res) => {
   const { error } = movieSchema.validate(req.body);
   
   if (error) {
@@ -177,7 +178,8 @@ router.post('/', async (req, res) => {
  *       404:
  *         description: Movie not found
  */
-router.put('/:id', async (req, res) => {
+// 更新電影的路由，僅允許已驗證的用戶訪問
+router.put('/:id', authenticateJWT, async (req, res) => {
   const movieId = req.params.id;
 
   if (!ObjectId.isValid(movieId)) {
@@ -222,7 +224,8 @@ router.put('/:id', async (req, res) => {
  *       404:
  *         description: Movie not found
  */
-router.delete('/:id', async (req, res) => {
+// 刪除電影路由，僅允許已驗證的用戶訪問
+router.delete('/:id', authenticateJWT, async (req, res) => {
   const movieId = req.params.id;
 
   if (!ObjectId.isValid(movieId)) {
@@ -263,7 +266,8 @@ router.delete('/:id', async (req, res) => {
  *       200:
  *         description: Poster uploaded successfully and associated with the movie
  */
-router.post('/:id/upload', upload.single('poster'), async (req, res) => {
+// 上傳圖片的路由，僅允許已驗證的用戶訪問
+router.post('/:id/upload', authenticateJWT, upload.single('poster'), async (req, res) => {
   const movieId = req.params.id;
 
   if (!req.file) {
@@ -271,7 +275,6 @@ router.post('/:id/upload', upload.single('poster'), async (req, res) => {
   }
 
   try {
-    // 儲存圖片路徑到特定電影
     const result = await addMoviePosterToMovie(movieId, req.file.path);
     if (result.matchedCount === 0) {
       return res.status(404).json({ error: 'Movie not found' });
