@@ -3,6 +3,7 @@ import { app } from '../index'; // 引入 server
 import { MongoClient } from 'mongodb';
 import dotenv from 'dotenv';
 import { ObjectId } from 'mongodb';
+import path from 'path';
 
 dotenv.config();
 
@@ -69,5 +70,19 @@ describe('Movie API Endpoints', () => {
     const res = await request(app).delete(`/api/movies/${movieId}`);
     expect(res.statusCode).toEqual(200);
     expect(res.body).toHaveProperty('message', 'Movie deleted successfully');
+  });
+});
+
+describe('Movie API - Upload Poster', () => {
+  // 測試成功上傳圖片
+  it('should upload a movie poster successfully', async () => {
+    const res = await request(app)
+      .post('/api/movies/upload')  // API 端點，用於處理文件上傳
+      .attach('poster', path.resolve(__dirname, 'sample-image.jpg'));  // 附加本地圖片文件
+
+    // 檢查狀態碼與回應內容
+    expect(res.statusCode).toEqual(200);
+    expect(res.body).toHaveProperty('message', 'Poster uploaded successfully');
+    expect(res.body).toHaveProperty('path');  // 驗證路徑是否返回
   });
 });
