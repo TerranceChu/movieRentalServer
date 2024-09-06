@@ -9,6 +9,7 @@ import { setDatabase } from './services/movieService';
 import moviesRouter from './routes/movies';
 
 import { setupSwagger } from './utils/swagger';
+import authRouter from './routes/auth';
 
 // 加載環境變量
 dotenv.config();
@@ -44,6 +45,8 @@ MongoClient.connect(mongoUri)
 
 // 使用 '/api/movies' 路由
 app.use('/api/movies', moviesRouter);
+// 註冊路由
+app.use('/api/auth', authRouter);
 
 // 設置基本的測試路由
 app.get('/', (req, res) => {
