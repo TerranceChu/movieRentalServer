@@ -255,11 +255,17 @@ router.delete('/:id', async (req, res) => {
  *       200:
  *         description: Poster uploaded successfully
  */
-router.post('/upload', upload.single('poster'), (req, res) => {
+router.post('/upload', upload.single('poster'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });
   }
-  res.status(200).json({ message: 'Poster uploaded successfully', path: req.file.path });
-});
 
+  try {
+    // 儲存圖片路徑到數據庫
+    const result = await addMoviePosterPath(req.file.path);
+    res.status(200).json({ message: 'Poster uploaded successfully', path: req.file.path });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to upload poster' });
+  }
+});
 export default router;

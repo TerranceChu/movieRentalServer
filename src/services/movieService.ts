@@ -40,11 +40,11 @@ export const deleteMovie = async (id: string) => {
   return await db.collection('movies').deleteOne({ _id: new ObjectId(id) });
 };
 
-// 將圖片路徑添加到指定電影中
-export const addMoviePosterPath = async (movieId: string, path: string) => {
-  const result = await db.collection('movies').updateOne(
-    { _id: new ObjectId(movieId) }, // 根據電影ID進行查找
-    { $set: { posterPath: path } }  // 更新圖片路徑
-  );
-  return result;
+// 儲存圖片路徑到 MongoDB
+export const addMoviePosterPath = async (path: string) => {
+  const poster = {
+    posterPath: path,
+    uploadedAt: new Date(),
+  };
+  return await db.collection('posters').insertOne(poster);
 };
