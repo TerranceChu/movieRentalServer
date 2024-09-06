@@ -3,6 +3,7 @@ import { ObjectId } from 'mongodb';
 import { getAllMovies, getMovieById, addMovie, updateMovie, deleteMovie } from '../services/movieService';
 import Joi from 'joi';
 import upload from '../utils/upload';
+import { addMoviePosterPath } from '../services/movieService';
 
 const router = Router();
 
