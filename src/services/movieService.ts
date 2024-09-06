@@ -1,5 +1,6 @@
 // src/services/movieService.ts
 import { Db } from 'mongodb';
+import { ObjectId } from 'mongodb';
 
 // 設置一個全局變量來保存數據庫對象
 let db: Db;
@@ -38,4 +39,13 @@ export const updateMovie = async (id: string, updatedMovie: any) => {
 export const deleteMovie = async (id: string) => {
   const ObjectId = require('mongodb').ObjectId;
   return await db.collection('movies').deleteOne({ _id: new ObjectId(id) });
+};
+
+// 將圖片路徑添加到指定電影中
+export const addMoviePosterPath = async (movieId: string, path: string) => {
+  const result = await db.collection('movies').updateOne(
+    { _id: new ObjectId(movieId) }, // 根據電影ID進行查找
+    { $set: { posterPath: path } }  // 更新圖片路徑
+  );
+  return result;
 };
