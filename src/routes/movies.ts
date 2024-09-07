@@ -3,13 +3,11 @@ import { ObjectId } from 'mongodb';
 import { getAllMovies, getMovieById, addMovie, updateMovie, deleteMovie } from '../services/movieService';
 import Joi from 'joi';
 import upload from '../utils/upload';
-import { addMoviePosterPath } from '../services/movieService';
-import { addMoviePosterToMovie } from '../services/movieService';  
+import { addMoviePosterToMovie } from '../services/movieService';
 import { authenticateJWT } from '../utils/authMiddleware';
 
 const router = Router();
 
-// 定义电影数据的验证规则
 const movieSchema = Joi.object({
   title: Joi.string().required(),
   year: Joi.number().integer().min(1888).required(),
@@ -20,6 +18,13 @@ const movieSchema = Joi.object({
 
 /**
  * @swagger
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ * 
  * tags:
  *   name: Movies
  *   description: API for managing movies
@@ -31,6 +36,8 @@ const movieSchema = Joi.object({
  *   get:
  *     summary: Retrieve a list of movies
  *     tags: [Movies]
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: A list of movies.
@@ -40,8 +47,12 @@ const movieSchema = Joi.object({
  *               type: array
  *               items:
  *                 type: object
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Failed to fetch movies
  */
-router.get('/', async (req, res) => {
+router.get('/', authenticateJWT, async (req, res) => {
   try {
     const movies = await getAllMovies();
     res.json(movies);
@@ -56,6 +67,8 @@ router.get('/', async (req, res) => {
  *   get:
  *     summary: Get a movie by ID
  *     tags: [Movies]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -66,10 +79,14 @@ router.get('/', async (req, res) => {
  *     responses:
  *       200:
  *         description: Movie data
+ *       400:
+ *         description: Invalid movie ID format
+ *       401:
+ *         description: Unauthorized
  *       404:
  *         description: Movie not found
  */
-router.get('/:id', async (req, res) => {
+router.get('/:id', authenticateJWT, async (req, res) => {
   const movieId = req.params.id;
   
   if (!ObjectId.isValid(movieId)) {
@@ -93,6 +110,8 @@ router.get('/:id', async (req, res) => {
  *   post:
  *     summary: Add a new movie
  *     tags: [Movies]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -122,8 +141,11 @@ router.get('/:id', async (req, res) => {
  *         description: Movie created successfully
  *       400:
  *         description: Invalid input data
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Failed to add movie
  */
-// 添加新電影的路由，僅允許已驗證的用戶訪問
 router.post('/', authenticateJWT, async (req, res) => {
   const { error } = movieSchema.validate(req.body);
   
@@ -145,6 +167,8 @@ router.post('/', authenticateJWT, async (req, res) => {
  *   put:
  *     summary: Update a movie by ID
  *     tags: [Movies]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -175,10 +199,13 @@ router.post('/', authenticateJWT, async (req, res) => {
  *         description: Movie updated successfully
  *       400:
  *         description: Invalid movie ID format or invalid data
+ *       401:
+ *         description: Unauthorized
  *       404:
  *         description: Movie not found
+ *       500:
+ *         description: Failed to update movie
  */
-// 更新電影的路由，僅允許已驗證的用戶訪問
 router.put('/:id', authenticateJWT, async (req, res) => {
   const movieId = req.params.id;
 
@@ -209,6 +236,8 @@ router.put('/:id', authenticateJWT, async (req, res) => {
  *   delete:
  *     summary: Delete a movie by ID
  *     tags: [Movies]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -221,10 +250,13 @@ router.put('/:id', authenticateJWT, async (req, res) => {
  *         description: Movie deleted successfully
  *       400:
  *         description: Invalid movie ID format
+ *       401:
+ *         description: Unauthorized
  *       404:
  *         description: Movie not found
+ *       500:
+ *         description: Failed to delete movie
  */
-// 刪除電影路由，僅允許已驗證的用戶訪問
 router.delete('/:id', authenticateJWT, async (req, res) => {
   const movieId = req.params.id;
 
@@ -249,8 +281,18 @@ router.delete('/:id', authenticateJWT, async (req, res) => {
  *   post:
  *     summary: Upload a movie poster and associate it with a movie
  *     tags: [Movies]
- *     consumes:
- *       - multipart/form-data
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               poster:
+ *                 type: string
+ *                 format: binary
  *     parameters:
  *       - in: path
  *         name: id
@@ -258,15 +300,18 @@ router.delete('/:id', authenticateJWT, async (req, res) => {
  *           type: string
  *         required: true
  *         description: The movie ID
- *       - in: formData
- *         name: poster
- *         type: file
- *         description: The movie poster to upload
  *     responses:
  *       200:
  *         description: Poster uploaded successfully and associated with the movie
+ *       400:
+ *         description: No file uploaded
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Movie not found
+ *       500:
+ *         description: Failed to upload poster
  */
-// 上傳圖片的路由，僅允許已驗證的用戶訪問
 router.post('/:id/upload', authenticateJWT, upload.single('poster'), async (req, res) => {
   const movieId = req.params.id;
 

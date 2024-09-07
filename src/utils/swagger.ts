@@ -6,13 +6,21 @@ const options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'Movie Rental API', // API的名称
-      version: '1.0.0', // 版本号
-      description: 'A simple Movie Rental API', // 描述信息
+      title: 'Movie Rental API',
+      version: '1.0.0',
     },
-    servers: [
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        },
+      },
+    },
+    security: [
       {
-        url: 'http://localhost:3000', // 本地服务器地址
+        bearerAuth: [],
       },
     ],
   },
@@ -21,7 +29,6 @@ const options = {
 
 const swaggerSpec = swaggerJsdoc(options);
 
-// 设置Swagger中间件
 export const setupSwagger = (app: Express) => {
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 };

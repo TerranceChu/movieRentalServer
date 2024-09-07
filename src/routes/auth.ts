@@ -5,7 +5,41 @@ import { ObjectId } from 'mongodb';
 
 const router = express.Router();
 
-// 註冊新用戶
+/**
+ * @swagger
+ * tags:
+ *   name: Auth
+ *   description: API for user authentication
+ */
+
+/**
+ * @swagger
+ * /api/auth/register:
+ *   post:
+ *     summary: Register a new user
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - password
+ *             properties:
+ *               username:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: User registered successfully
+ *       400:
+ *         description: Username and password are required
+ *       500:
+ *         description: Error registering user
+ */
 router.post('/register', async (req, res) => {
   const { username, password } = req.body;
 
@@ -35,7 +69,38 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// 用戶登錄
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: User login
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - password
+ *             properties:
+ *               username:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *       400:
+ *         description: Username and password are required
+ *       401:
+ *         description: Invalid credentials
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Error logging in
+ */
 router.post('/login', async (req, res) => {
   const { username, password } = req.body;
 

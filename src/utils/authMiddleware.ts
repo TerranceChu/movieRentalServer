@@ -12,7 +12,11 @@ export const authenticateJWT = (req: Request, res: Response, next: NextFunction)
         return res.status(403).json({ message: 'Invalid or expired token' });
       }
 
-      req.user = user; // 將user屬性添加到req中
+      if ('user' in req) {
+        req.user = user; // 確認 user 屬性存在並賦值
+      } else {
+        console.error('user property does not exist on Request object');
+      }
       next();
     });
   } else {
