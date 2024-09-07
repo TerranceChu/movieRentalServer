@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import Joi from 'joi';
-import { createApplication, getAllApplications } from '../services/applicationService';
+import { createApplication, getAllApplications, updateApplicationStatus } from '../services/applicationService';
 import { authenticateJWT } from '../utils/authMiddleware';
 
 const router = Router();
@@ -10,6 +10,11 @@ const applicationSchema = Joi.object({
   applicantName: Joi.string().required(),
   applicantEmail: Joi.string().email().required(),
   description: Joi.string().required(),
+});
+
+// 申請狀態的驗證模式
+const statusSchema = Joi.object({
+  status: Joi.string().valid('new', 'pending', 'accepted', 'rejected').required(),
 });
 
 /**
@@ -81,6 +86,59 @@ router.get('/', authenticateJWT, async (req, res) => {
     res.status(200).json(applications);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch applications' });
+  }
+});
+
+/**
+ * @swagger
+ * /api/applications/{id}/status:
+ *   put:
+ *     summary: Update the status of an application
+ *     tags: [Applications]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The application ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [new, pending, accepted, rejected]
+ *     responses:
+ *       200:
+ *         description: Application status updated successfully
+ *       400:
+ *         description: Invalid status
+ *       404:
+ *         description: Application not found
+ *       500:
+ *         description: Failed to update application status
+ */
+router.put('/:id/status', authenticateJWT, async (req, res) => {
+  const { error } = statusSchema.validate(req.body);
+  
+  if (error) {
+    return res.status(400).json({ error: error.details[0].message });
+  }
+
+  try {
+    const updatedApplication = await updateApplicationStatus(req.params.id, req.body.status);
+    if (!updatedApplication) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+    res.status(200).json({ message: 'Application status updated successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update application status' });
   }
 });
 

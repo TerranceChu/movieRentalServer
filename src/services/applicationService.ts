@@ -32,3 +32,20 @@ export const getAllApplications = async () => {
     throw new Error('Failed to fetch applications');
   }
 };
+
+// 更新申請狀態
+export const updateApplicationStatus = async (id: string, status: string) => {
+  try {
+    const result = await db.collection('applications').updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { status } }
+    );
+    if (result.matchedCount === 0) {
+      return null;
+    }
+    return result;
+  } catch (error) {
+    console.error(`Failed to update application status for ID ${id}:`, error);
+    throw new Error('Failed to update application status');
+  }
+};
