@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import Joi from 'joi';
-import { createApplication, getAllApplications, updateApplicationStatus } from '../services/applicationService';
+import { createApplication, getAllApplications, updateApplicationStatus, updateApplicationWithImage } from '../services/applicationService';
 import { authenticateJWT } from '../utils/authMiddleware';
+import upload from '../utils/upload'; // 引入文件上傳工具
 
 const router = Router();
 
@@ -139,6 +140,59 @@ router.put('/:id/status', authenticateJWT, async (req, res) => {
     res.status(200).json({ message: 'Application status updated successfully' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to update application status' });
+  }
+});
+
+/**
+ * @swagger
+ * /api/applications/{id}/upload:
+ *   post:
+ *     summary: Upload an image for the application
+ *     tags: [Applications]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The application ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Image uploaded successfully
+ *       400:
+ *         description: Invalid input
+ *       404:
+ *         description: Application not found
+ *       500:
+ *         description: Failed to upload image
+ */
+router.post('/:id/upload', authenticateJWT, upload.single('image'), async (req, res) => {
+  const applicationId = req.params.id;
+
+  if (!req.file) {
+    return res.status(400).json({ message: 'No file uploaded' });
+  }
+
+  try {
+    const updatedApplication = await updateApplicationWithImage(applicationId, req.file.path);
+    if (!updatedApplication) {
+      return res.status(404).json({ message: 'Application not found' });
+    }
+    res.status(200).json({ message: 'Image uploaded successfully', path: req.file.path });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to upload image', error });
   }
 });
 

@@ -49,3 +49,34 @@ export const updateApplicationStatus = async (id: string, status: string) => {
     throw new Error('Failed to update application status');
   }
 };
+
+// 更新申請圖片
+export const updateApplicationWithImage = async (id: string, imagePath: string) => {
+  try {
+    const result = await db.collection('applications').updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { imagePath } }
+    );
+    if (result.matchedCount === 0) {
+      return null;
+    }
+    return result;
+  } catch (error) {
+    console.error(`Failed to update application with image for ID ${id}:`, error);
+    throw new Error('Failed to update application with image');
+  }
+};
+
+// 獲取單個申請
+export const getApplicationById = async (id: string) => {
+  try {
+    const application = await db.collection('applications').findOne({ _id: new ObjectId(id) });
+    if (!application) {
+      throw new Error('Application not found');
+    }
+    return application;
+  } catch (error) {
+    console.error(`Failed to fetch application with ID ${id}:`, error);
+    throw new Error('Failed to fetch application');
+  }
+};
