@@ -26,7 +26,7 @@ const router = express.Router();
  *             required:
  *               - username
  *               - password
- *               - role  // 添加角色字段
+ *               - role  
  *             properties:
  *               username:
  *                 type: string
@@ -34,7 +34,7 @@ const router = express.Router();
  *                 type: string
  *               role:
  *                 type: string
- *                 enum: [user, employee]  // 角色可以是 user 或 employee
+ *                 enum: [user, employee]  
  *     responses:
  *       201:
  *         description: User registered successfully
