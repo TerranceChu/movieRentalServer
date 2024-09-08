@@ -123,8 +123,15 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // 生成JWT
-    const token = jwt.sign({ userId: user._id, username: user.username }, process.env.JWT_SECRET || 'secretKey', { expiresIn: '1h' });
+    // 获取用户角色 (假设用户文档中有 role 字段)
+    const userRole = user.role || 'user'; // 默认角色为普通用户
+
+    // 生成JWT，包含用户ID、用户名和角色
+    const token = jwt.sign(
+      { userId: user._id, username: user.username, role: userRole },
+      process.env.JWT_SECRET || 'secretKey',
+      { expiresIn: '1h' }
+    );
 
     res.json({ message: 'Login successful', token });
   } catch (error) {
