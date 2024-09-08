@@ -250,8 +250,6 @@ router.put('/:id', authenticateJWT, async (req, res) => {
  *         description: Movie deleted successfully
  *       400:
  *         description: Invalid movie ID format
- *       401:
- *         description: Unauthorized
  *       404:
  *         description: Movie not found
  *       500:

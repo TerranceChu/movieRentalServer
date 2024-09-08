@@ -78,6 +78,24 @@ router.post('/', authenticateJWT, async (req, res) => {
  *     responses:
  *       200:
  *         description: List of applications
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   applicantName:
+ *                     type: string
+ *                   applicantEmail:
+ *                     type: string
+ *                   description:
+ *                     type: string
+ *                   status:
+ *                     type: string
+ *                   createdAt:
+ *                     type: string
+ *                     format: date-time
  *       401:
  *         description: Unauthorized
  */
