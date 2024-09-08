@@ -1,7 +1,6 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { ObjectId } from 'mongodb';
 
 const router = express.Router();
 
@@ -27,11 +26,15 @@ const router = express.Router();
  *             required:
  *               - username
  *               - password
+ *               - role  // 添加角色字段
  *             properties:
  *               username:
  *                 type: string
  *               password:
  *                 type: string
+ *               role:
+ *                 type: string
+ *                 enum: [user, employee]  // 角色可以是 user 或 employee
  *     responses:
  *       201:
  *         description: User registered successfully
@@ -41,27 +44,31 @@ const router = express.Router();
  *         description: Error registering user
  */
 router.post('/register', async (req, res) => {
-  const { username, password } = req.body;
+  const { username, password, role } = req.body; // 获取注册时提供的角色
 
   if (!username || !password) {
     return res.status(400).json({ message: 'Username and password are required' });
   }
 
   try {
-    // 檢查用戶是否已存在
+    // 检查用户是否已存在
     const user = await req.app.locals.db.collection('users').findOne({ username });
     if (user) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // 加密密碼
+    // 加密密码
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 儲存用戶信息
-    const result = await req.app.locals.db.collection('users').insertOne({
+    // 如果角色未指定，默认设置为 'user'
+    const newUser = {
       username,
       password: hashedPassword,
-    });
+      role: role || 'user',  // 如果没有提供角色，默认为普通用户
+    };
+
+    // 将新用户存入数据库
+    const result = await req.app.locals.db.collection('users').insertOne(newUser);
 
     res.status(201).json({ message: 'User registered successfully', userId: result.insertedId });
   } catch (error) {
@@ -109,30 +116,28 @@ router.post('/login', async (req, res) => {
   }
 
   try {
-    // 查找用戶
+    // 查找用户
     const user = await req.app.locals.db.collection('users').findOne({ username });
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // 驗證密碼
+    // 验证密码
     const validPassword = await bcrypt.compare(password, user.password);
 
     if (!validPassword) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // 获取用户角色 (假设用户文档中有 role 字段)
-    const userRole = user.role || 'user'; // 默认角色为普通用户
-
-    // 生成JWT，包含用户ID、用户名和角色
+    // 生成 JWT，包含用户 ID、用户名和角色
     const token = jwt.sign(
-      { userId: user._id, username: user.username, role: userRole },
+      { userId: user._id, username: user.username, role: user.role },  // 包含用户角色
       process.env.JWT_SECRET || 'secretKey',
       { expiresIn: '1h' }
     );
 
+    // 返回登录成功信息及 JWT
     res.json({ message: 'Login successful', token });
   } catch (error) {
     res.status(500).json({ message: 'Error logging in' });
