@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
+import path from 'path';
 
 import { MongoClient } from 'mongodb';
 import { setDatabase } from './services/applicationService'; // 將應用服務設置到數據庫中
@@ -49,6 +50,7 @@ app.use('/api/applications', applicationsRouter); // 申請相關的API路由
 app.use('/api/movies', moviesRouter); // 電影相關的API路由，如果需要
 app.use('/api/auth', authRouter);
 app.use('/api/users', userRouter); // 授權相關的API路由
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // 初始化Swagger文檔
 setupSwagger(app);
