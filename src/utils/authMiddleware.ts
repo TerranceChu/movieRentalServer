@@ -1,22 +1,25 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 
-export const authenticateJWT = (req: Request, res: Response, next: NextFunction) => {
+interface CustomRequest extends Request {
+  user?: string | JwtPayload;
+}
+
+export const authenticateJWT = (req: CustomRequest, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
 
   if (authHeader) {
     const token = authHeader.split(' ')[1];
 
-    jwt.verify(token, process.env.JWT_SECRET || 'secretKey', (err, user) => {
+    jwt.verify(token, process.env.JWT_SECRET || 'secretKey', (err, decoded) => {
       if (err) {
         return res.status(403).json({ message: 'Invalid or expired token' });
       }
 
-      if ('user' in req) {
-        req.user = user; // 確認 user 屬性存在並賦值
-      } else {
-        console.error('user property does not exist on Request object');
-      }
+      // 将解码后的 JWT 负载赋值给 req.user
+      req.user = decoded as JwtPayload;
+      console.log('Token decoded successfully:', req.user);
+
       next();
     });
   } else {

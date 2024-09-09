@@ -10,6 +10,7 @@ import { setDatabase as setMovieDatabase } from './services/movieService'; // �
 import applicationsRouter from './routes/applications'; // 申請的路由
 import moviesRouter from './routes/movies'; // 如果已經有電影的路由
 import authRouter from './routes/auth'; // 授權路由
+import userRouter from './routes/user';
 
 import { setupSwagger } from './utils/swagger'; // Swagger文檔設置
 
@@ -46,7 +47,8 @@ MongoClient.connect(mongoUri)
 // 設置應用的路由
 app.use('/api/applications', applicationsRouter); // 申請相關的API路由
 app.use('/api/movies', moviesRouter); // 電影相關的API路由，如果需要
-app.use('/api/auth', authRouter); // 授權相關的API路由
+app.use('/api/auth', authRouter);
+app.use('/api/users', userRouter); // 授權相關的API路由
 
 // 初始化Swagger文檔
 setupSwagger(app);

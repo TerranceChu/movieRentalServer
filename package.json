@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "tsc", 
+    "build": "tsc",
     "start": "node dist/index.js",
     "test": "cross-env NODE_ENV=test jest --passWithNoTests --detectOpenHandles",
     "test:coverage": "jest --coverage"
@@ -28,6 +28,7 @@
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
+    "@tsconfig/node18": "^18.2.4",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
