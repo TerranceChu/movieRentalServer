@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">78.78% </span>
+                <span class="strong">76.47% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>26/33</span>
+                <span class='fraction'>26/34</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">81.81% </span>
+                <span class="strong">69.23% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>9/11</span>
+                <span class='fraction'>9/13</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">77.41% </span>
+                <span class="strong">75% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>24/31</span>
+                <span class='fraction'>24/32</span>
             </div>
         
             
@@ -198,12 +198,27 @@
 <a name='L133'></a><a href='#L133'>133</a>
 <a name='L134'></a><a href='#L134'>134</a>
 <a name='L135'></a><a href='#L135'>135</a>
-<a name='L136'></a><a href='#L136'>136</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">3x</span>
+<a name='L136'></a><a href='#L136'>136</a>
+<a name='L137'></a><a href='#L137'>137</a>
+<a name='L138'></a><a href='#L138'>138</a>
+<a name='L139'></a><a href='#L139'>139</a>
+<a name='L140'></a><a href='#L140'>140</a>
+<a name='L141'></a><a href='#L141'>141</a>
+<a name='L142'></a><a href='#L142'>142</a>
+<a name='L143'></a><a href='#L143'>143</a>
+<a name='L144'></a><a href='#L144'>144</a>
+<a name='L145'></a><a href='#L145'>145</a>
+<a name='L146'></a><a href='#L146'>146</a>
+<a name='L147'></a><a href='#L147'>147</a>
+<a name='L148'></a><a href='#L148'>148</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -263,6 +278,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -325,6 +344,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -336,7 +360,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { ObjectId } from 'mongodb';
 &nbsp;
 const router = express.Router();
 &nbsp;
@@ -362,11 +385,15 @@ const router = express.Router();
  *             required:
  *               - username
  *               - password
+ *               - role  
  *             properties:
  *               username:
  *                 type: string
  *               password:
  *                 type: string
+ *               role:
+ *                 type: string
+ *                 enum: [user, employee]  
  *     responses:
  *       201:
  *         description: User registered successfully
@@ -376,27 +403,31 @@ const router = express.Router();
  *         description: Error registering user
  */
 router.post('/register', async (req, res) =&gt; {
-  const { username, password } = req.body;
+  const { username, password, role } = req.body; // 获取注册时提供的角色
 &nbsp;
   if (!username || !password) {
     return res.status(400).json({ message: 'Username and password are required' });
   }
 &nbsp;
   try {
-    // 檢查用戶是否已存在
+    // 检查用户是否已存在
     const user = await req.app.locals.db.collection('users').findOne({ username });
     if (user) {
       return res.status(400).json({ message: 'User already exists' });
     }
 &nbsp;
-    // 加密密碼
+    // 加密密码
     const hashedPassword = <span class="cstat-no" title="statement not covered" >await bcrypt.hash(password, 10);</span>
 &nbsp;
-    // 儲存用戶信息
-    const result = <span class="cstat-no" title="statement not covered" >await req.app.locals.db.collection('users').insertOne({</span>
+    // 如果角色未指定，默认设置为 'user'
+    const newUser = <span class="cstat-no" title="statement not covered" >{</span>
       username,
       password: hashedPassword,
-    });
+      role: role || 'user',  // 如果没有提供角色，默认为普通用户
+    };
+&nbsp;
+    // 将新用户存入数据库
+    const result = <span class="cstat-no" title="statement not covered" >await req.app.locals.db.collection('users').insertOne(newUser);</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    res.status(201).json({ message: 'User registered successfully', userId: result.insertedId });</span>
   } catch (error) {
@@ -444,23 +475,28 @@ router.post('/login', async (req, res) =&gt; {
   }
 &nbsp;
   try {
-    // 查找用戶
+    // 查找用户
     const user = await req.app.locals.db.collection('users').findOne({ username });
 &nbsp;
     <span class="missing-if-branch" title="if path not taken" >I</span>if (!user) {
 <span class="cstat-no" title="statement not covered" >      return res.status(404).json({ message: 'User not found' });</span>
     }
 &nbsp;
-    // 驗證密碼
+    // 验证密码
     const validPassword = await bcrypt.compare(password, user.password);
 &nbsp;
     if (!validPassword) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 &nbsp;
-    // 生成JWT
-    const token = jwt.sign({ userId: user._id, username: user.username }, process.env.JWT_SECRET || 'secretKey', { expiresIn: '1h' });
+    // 生成 JWT，包含用户 ID、用户名和角色
+    const token = jwt.sign(
+      { userId: user._id, username: user.username, role: user.role },  // 包含用户角色
+      process.env.JWT_SECRET || 'secretKey',
+      { expiresIn: '1h' }
+    );
 &nbsp;
+    // 返回登录成功信息及 JWT
     res.json({ message: 'Login successful', token });
   } catch (error) {
 <span class="cstat-no" title="statement not covered" >    res.status(500).json({ message: 'Error logging in' });</span>
@@ -475,7 +511,7 @@ export default router;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2024-09-08T07:58:33.547Z
+                at 2024-09-09T06:09:55.965Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
