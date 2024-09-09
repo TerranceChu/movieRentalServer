@@ -13,7 +13,8 @@ const movieSchema = Joi.object({
   year: Joi.number().integer().min(1888).required(),
   genre: Joi.string().required(),
   rating: Joi.number().min(0).max(10).required(),
-  status: Joi.string().valid('available', 'pending', 'offline').required()
+  status: Joi.string().valid('available', 'pending', 'offline').required(),
+  description: Joi.string().required()
 });
 
 /**
