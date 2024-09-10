@@ -13,7 +13,8 @@ export const createApplication = async (application: any) => {
     const result = await db.collection('applications').insertOne({
       ...application,
       status: 'new', // 默認狀態為 new
-      createdAt: new Date(), // 設置創建時間
+      createdAt: new Date(),
+      userId: application.userId
     });
     return result;
   } catch (error) {
@@ -23,12 +24,23 @@ export const createApplication = async (application: any) => {
 };
 
 // 獲取所有申請
-export const getAllApplications = async () => {
+export const getAllApplications = async (filter = {}) => {
   try {
-    const applications = await db.collection('applications').find().toArray();
+    const applications = await db.collection('applications').find(filter).toArray();
     return applications;
   } catch (error) {
     console.error('Failed to fetch applications:', error);
+    throw new Error('Failed to fetch applications');
+  }
+};
+
+// 根据用户邮箱获取申请
+export const getApplicationsByEmail = async (email: string) => {
+  try {
+    const applications = await db.collection('applications').find({ applicantEmail: email }).toArray();
+    return applications;
+  } catch (error) {
+    console.error('Failed to fetch applications by email:', error);
     throw new Error('Failed to fetch applications');
   }
 };
@@ -68,15 +80,14 @@ export const updateApplicationWithImage = async (id: string, imagePath: string) 
 };
 
 // 獲取單個申請
-export const getApplicationById = async (id: string) => {
+// 根据 userId 获取申请
+export const getApplicationsByUserId = async (userId: string) => {
   try {
-    const application = await db.collection('applications').findOne({ _id: new ObjectId(id) });
-    if (!application) {
-      throw new Error('Application not found');
-    }
-    return application;
+    const applications = await db.collection('applications').find({ userId }).toArray();
+    return applications;
   } catch (error) {
-    console.error(`Failed to fetch application with ID ${id}:`, error);
-    throw new Error('Failed to fetch application');
+    console.error('Failed to fetch applications by userId:', error);
+    throw new Error('Failed to fetch applications by userId');
   }
 };
+

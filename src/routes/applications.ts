@@ -1,105 +1,54 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import Joi from 'joi';
-import { createApplication, getAllApplications, updateApplicationStatus, updateApplicationWithImage } from '../services/applicationService';
+import { 
+  createApplication, 
+  getAllApplications, 
+  getApplicationsByUserId, 
+  updateApplicationStatus, 
+  updateApplicationWithImage 
+} from '../services/applicationService';
 import { authenticateJWT } from '../utils/authMiddleware';
-import upload from '../utils/upload'; // 引入文件上傳工具
+import upload from '../utils/upload'; // 引入文件上传工具
 
 const router = Router();
 
-// 申請的驗證模式
+// 申请的验证模式
 const applicationSchema = Joi.object({
   applicantName: Joi.string().required(),
   applicantEmail: Joi.string().email().required(),
   description: Joi.string().required(),
 });
 
-// 申請狀態的驗證模式
+// 申请状态的验证模式
 const statusSchema = Joi.object({
   status: Joi.string().valid('new', 'pending', 'accepted', 'rejected').required(),
 });
 
-/**
- * @swagger
- * /api/applications:
- *   post:
- *     summary: Create a new application
- *     tags: [Applications]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - applicantName
- *               - applicantEmail
- *               - description
- *             properties:
- *               applicantName:
- *                 type: string
- *               applicantEmail:
- *                 type: string
- *                 format: email
- *               description:
- *                 type: string
- *     responses:
- *       201:
- *         description: Application created successfully
- *       400:
- *         description: Invalid input data
- *       401:
- *         description: Unauthorized
- */
-router.post('/', authenticateJWT, async (req, res) => {
+// POST 路由: 创建新申请
+router.post('/', authenticateJWT, async (req: Request, res: Response) => {
   const { error } = applicationSchema.validate(req.body);
-  
+
   if (error) {
     return res.status(400).json({ error: error.details[0].message });
   }
 
   try {
-    const result = await createApplication(req.body);
+    // 使用类型断言以确保 userId 是从 JWT 中提取出来的
+    const user = (req as any).user;
+    const applicationData = {
+      ...req.body,
+      userId: user.userId, // 从 JWT 中提取的 userId
+    };
+
+    const result = await createApplication(applicationData);
     res.status(201).json(result);
   } catch (error) {
     res.status(500).json({ error: 'Failed to create application' });
   }
 });
 
-/**
- * @swagger
- * /api/applications:
- *   get:
- *     summary: Get all applications
- *     tags: [Applications]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: List of applications
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   applicantName:
- *                     type: string
- *                   applicantEmail:
- *                     type: string
- *                   description:
- *                     type: string
- *                   status:
- *                     type: string
- *                   createdAt:
- *                     type: string
- *                     format: date-time
- *       401:
- *         description: Unauthorized
- */
-router.get('/', authenticateJWT, async (req, res) => {
+// GET 路由: 获取所有申请
+router.get('/', authenticateJWT, async (req: Request, res: Response) => {
   try {
     const applications = await getAllApplications();
     res.status(200).json(applications);
@@ -108,44 +57,26 @@ router.get('/', authenticateJWT, async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /api/applications/{id}/status:
- *   put:
- *     summary: Update the status of an application
- *     tags: [Applications]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: string
- *         required: true
- *         description: The application ID
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               status:
- *                 type: string
- *                 enum: [new, pending, accepted, rejected]
- *     responses:
- *       200:
- *         description: Application status updated successfully
- *       400:
- *         description: Invalid status
- *       404:
- *         description: Application not found
- *       500:
- *         description: Failed to update application status
- */
-router.put('/:id/status', authenticateJWT, async (req, res) => {
+// GET 路由: 获取当前登录用户的所有申请
+router.get('/user', authenticateJWT, async (req: Request, res: Response) => {
+  const user = (req as any).user;
+
+  if (!user || !user.userId) {
+    return res.status(400).json({ error: 'User ID not found in token' });
+  }
+
+  try {
+    const applications = await getApplicationsByUserId(user.userId);
+    res.status(200).json(applications);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch user applications' });
+  }
+});
+
+// PUT 路由: 更新申请状态
+router.put('/:id/status', authenticateJWT, async (req: Request, res: Response) => {
   const { error } = statusSchema.validate(req.body);
-  
+
   if (error) {
     return res.status(400).json({ error: error.details[0].message });
   }
@@ -161,56 +92,25 @@ router.put('/:id/status', authenticateJWT, async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /api/applications/{id}/upload:
- *   post:
- *     summary: Upload an image for the application
- *     tags: [Applications]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: string
- *         required: true
- *         description: The application ID
- *     requestBody:
- *       required: true
- *       content:
- *         multipart/form-data:
- *           schema:
- *             type: object
- *             properties:
- *               image:
- *                 type: string
- *                 format: binary
- *     responses:
- *       200:
- *         description: Image uploaded successfully
- *       400:
- *         description: Invalid input
- *       404:
- *         description: Application not found
- *       500:
- *         description: Failed to upload image
- */
-router.post('/:id/upload', authenticateJWT, upload.single('image'), async (req, res) => {
+// POST 路由: 上传申请图片
+router.post('/:id/upload', authenticateJWT, upload.single('image'), async (req: Request, res: Response) => {
   const applicationId = req.params.id;
+  
+  // 类型断言 req.file 为 Express.Multer.File 类型
+  const file = req.file as Express.Multer.File;
 
-  if (!req.file) {
-    return res.status(400).json({ message: 'No file uploaded' });
+  if (!file) {
+    return res.status(400).json({ error: 'No file uploaded' });
   }
 
   try {
-    const updatedApplication = await updateApplicationWithImage(applicationId, req.file.path);
+    const updatedApplication = await updateApplicationWithImage(applicationId, file.path);
     if (!updatedApplication) {
-      return res.status(404).json({ message: 'Application not found' });
+      return res.status(404).json({ error: 'Application not found' });
     }
-    res.status(200).json({ message: 'Image uploaded successfully', path: req.file.path });
+    res.status(200).json({ message: 'Image uploaded successfully', path: file.path });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to upload image', error });
+    res.status(500).json({ error: 'Failed to upload image', details: error });
   }
 });
 
