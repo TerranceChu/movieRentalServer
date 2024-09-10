@@ -15,7 +15,7 @@ const movieSchema = Joi.object({
   rating: Joi.number().min(0).max(10).required(),
   status: Joi.string().valid('available', 'pending', 'offline').required(),
   description: Joi.string().required()
-});
+}).options({ stripUnknown: true });
 
 /**
  * @swagger
