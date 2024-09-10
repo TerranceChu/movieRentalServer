@@ -6,7 +6,7 @@ import upload from '../utils/upload';
 import { addMoviePosterToMovie } from '../services/movieService';
 import { authenticateJWT } from '../utils/authMiddleware';
 
-const router = Router();
+const router = Router(); 
 
 const movieSchema = Joi.object({
   title: Joi.string().required(),
