@@ -89,11 +89,11 @@ MongoClient.connect(mongoUri)
         }
       });
 
-      // 监听用户离开房间
-      socket.on('leaveChat', (chatId) => {
-        socket.leave(chatId); // 用户离开指定的聊天房间
-        console.log(`User ${socket.id} left chat: ${chatId}`);
-      });
+      // 监听用户离开聊天房间
+// 不再发送消息，仅处理用户离开事件
+socket.on('leaveChat', (chatId) => {
+  socket.leave(chatId); // 仅让用户离开房间
+});
 
       // 监听用户断开连接
       socket.on('disconnect', () => {
