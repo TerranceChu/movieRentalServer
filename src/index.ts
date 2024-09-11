@@ -5,62 +5,65 @@ import dotenv from 'dotenv';
 import path from 'path';
 
 import { MongoClient } from 'mongodb';
-import { setDatabase } from './services/applicationService'; // 將應用服務設置到數據庫中
-import { setDatabase as setMovieDatabase } from './services/movieService'; // 如果需要同時設置電影服務
+import { setDatabase } from './services/applicationService'; // 将应用服务设置到数据库中
+import { setDatabase as setMovieDatabase } from './services/movieService'; // 如果需要同时设置电影服务
 
-import applicationsRouter from './routes/applications'; // 申請的路由
-import moviesRouter from './routes/movies'; // 如果已經有電影的路由
-import authRouter from './routes/auth'; // 授權路由
+import applicationsRouter from './routes/applications'; // 申请的路由
+import moviesRouter from './routes/movies'; // 如果已经有电影的路由
+import authRouter from './routes/auth'; // 授权路由
 import userRouter from './routes/user';
+import chatRouter from './routes/chat'; // 引入聊天相关的路由
+import { setDatabase as setChatDatabase } from './services/chatService';
+import { setupSwagger } from './utils/swagger'; // Swagger文档设置
 
-import { setupSwagger } from './utils/swagger'; // Swagger文檔設置
-
-// 加載環境變量
+// 加载环境变量
 dotenv.config();
 
-// 創建Express應用
+// 创建Express应用
 const app = express();
 
-// 使用CORS中間件來允許跨域請求
+// 使用CORS中间件来允许跨域请求
 app.use(cors());
 
-// 使用body-parser中間件來解析JSON請求體
+// 使用body-parser中间件来解析JSON请求体
 app.use(bodyParser.json());
 
-// 設置端口號，從環境變量中讀取
+// 设置端口号，从环境变量中读取
 const port = process.env.PORT || 3000;
 
-// 從環境變量中獲取MongoDB Atlas的連接字符串
+// 从环境变量中获取MongoDB Atlas的连接字符串
 const mongoUri = process.env.MONGODB_URI || '';
 
-// 連接到MongoDB Atlas
+// 连接到MongoDB Atlas
 MongoClient.connect(mongoUri)
   .then(client => {
-    // 連接成功後，選擇一個數據庫來使用
-    const db = client.db('movieRental'); // 這裡的 'movieRental' 是數據庫名稱，你可以根據需要修改
-    setDatabase(db); // 設置數據庫對象到應用服務層
-    setMovieDatabase(db); // 如果電影服務需要，也設置數據庫對象
-    app.locals.db = db; // 将 db 存储在 app.locals 中，供其他模塊使用
+    // 连接成功后，选择一个数据库来使用
+    const db = client.db('movieRental'); // 这里的 'movieRental' 是数据库名称，你可以根据需要修改
+    setDatabase(db); // 设置数据库对象到应用服务层
+    setMovieDatabase(db); // 如果电影服务需要，也设置数据库对象
+    setChatDatabase(db);
+    app.locals.db = db; // 将 db 存储在 app.locals 中，供其他模块使用
     console.log('Connected to Database');
   })
   .catch(error => console.error('Failed to connect to the database', error));
 
-// 設置應用的路由
-app.use('/api/applications', applicationsRouter); // 申請相關的API路由
-app.use('/api/movies', moviesRouter); // 電影相關的API路由，如果需要
+// 设置应用的路由
+app.use('/api/applications', applicationsRouter); // 申请相关的API路由
+app.use('/api/movies', moviesRouter); // 电影相关的API路由，如果需要
 app.use('/api/auth', authRouter);
-app.use('/api/users', userRouter); // 授權相關的API路由
+app.use('/api/users', userRouter); // 授权相关的API路由
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/api/chats', chatRouter); // 添加聊天功能的API路由
 
-// 初始化Swagger文檔
+// 初始化Swagger文档
 setupSwagger(app);
 
-// 基本測試路由
+// 基本测试路由
 app.get('/', (req, res) => {
   res.send('Welcome to the Movie Rental API');
 });
 
-// 啟動服務器，僅在非測試環境下
+// 启动服务器，仅在非测试环境下
 if (process.env.NODE_ENV !== 'test') {
   app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
