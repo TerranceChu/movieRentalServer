@@ -67,29 +67,35 @@ export const acceptChat = async (chatId: string, adminId: string) => {
 
 // 添加消息到聊天
 export const addMessageToChat = async (chatId: string, sender: string, message: string) => {
-  try {
-    const chatCollection = db.collection<ChatDocument>('chats');
-    const result = await chatCollection.updateOne(
-      { _id: new ObjectId(chatId) },
-      {
-        $push: {
-          messages: {
-            sender,
-            message,
-            timestamp: new Date(),
-          },
-        },
-      }
-    );
-    if (result.matchedCount === 0) {
-      throw new Error('Chat not found');
+    if (!db) {
+      console.error('Database connection not initialized');
+      throw new Error('Database connection not initialized');
     }
-    return result;
-  } catch (error) {
-    console.error('Failed to add message to chat:', error);
-    throw new Error('Failed to add message to chat');
-  }
-};
+  
+    try {
+      const chatCollection = db.collection<ChatDocument>('chats');
+      const result = await chatCollection.updateOne(
+        { _id: new ObjectId(chatId) },
+        {
+          $push: {
+            messages: {
+              sender,
+              message,
+              timestamp: new Date(),
+            },
+          },
+        }
+      );
+      if (result.matchedCount === 0) {
+        throw new Error('Chat not found');
+      }
+      return result;
+    } catch (error) {
+      console.error('Failed to add message to chat:', error);
+      throw new Error('Failed to add message to chat');
+    }
+  };
+  
 
 // 获取指定聊天的详细信息
 export const getChatById = async (chatId: string) => {
