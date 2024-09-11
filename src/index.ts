@@ -9,7 +9,6 @@ import { setDatabase } from './services/applicationService'; // 将应用服务�
 import { setDatabase as setMovieDatabase } from './services/movieService'; // 如果需要同时设置电影服务
 import { setDatabase as setChatDatabase, addMessageToChat } from './services/chatService'; // 导入 addMessageToChat
 
-
 import applicationsRouter from './routes/applications'; // 申请的路由
 import moviesRouter from './routes/movies'; // 如果已经有电影的路由
 import authRouter from './routes/auth'; // 授权路由
@@ -40,49 +39,13 @@ const port = process.env.PORT || 3000;
 // 创建 http 服务器
 const server = http.createServer(app);
 
-// 初始化 socket.io 服务器并附加到 http 服务器上
-const io = new Server(server, {
-  cors: {
-    origin: "http://localhost:3001", // 设置允许的前端 URL
-    methods: ["GET", "POST"]
-  }
-});
-
-// WebSocket 连接处理
-io.on('connection', (socket) => {
-  console.log('A user connected:', socket.id);
-
-  // 监听用户加入聊天房间
-  socket.on('joinChat', (chatId) => {
-    socket.join(chatId); // 用户加入特定的聊天房间
-    console.log(`User ${socket.id} joined chat: ${chatId}`);
-  });
-
-  // 监听消息发送事件
-  socket.on('sendMessage', async (data) => {
-    const { chatId, message, sender } = data;
-    
-    // 将消息存储到 MongoDB 中
-    try {
-      await addMessageToChat(chatId, sender, message);
-      
-      // 广播消息到该聊天房间的所有用户
-      io.to(chatId).emit('newMessage', { sender, message, timestamp: new Date() });
-    } catch (error) {
-      console.error('Error saving message to DB:', error);
-    }
-  });
-
-  // 监听用户断开连接
-  socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
-  });
-});
+// 声明 io 变量
+let io: Server;
 
 // 从环境变量中获取MongoDB Atlas的连接字符串
 const mongoUri = process.env.MONGODB_URI || '';
 
-// 连接到MongoDB Atlas
+// 连接到MongoDB Atlas并在成功后初始化 Socket.IO
 MongoClient.connect(mongoUri)
   .then(client => {
     // 连接成功后，选择一个数据库来使用
@@ -92,6 +55,57 @@ MongoClient.connect(mongoUri)
     setChatDatabase(db);
     app.locals.db = db; // 将 db 存储在 app.locals 中，供其他模块使用
     console.log('Connected to Database');
+
+    // 初始化 socket.io 服务器并附加到 http 服务器上
+    io = new Server(server, {
+      cors: {
+        origin: "http://localhost:3001", // 设置允许的前端 URL
+        methods: ["GET", "POST"]
+      }
+    });
+
+    // WebSocket 连接处理
+    io.on('connection', (socket) => {
+      console.log('A user connected:', socket.id);
+
+      // 监听用户加入聊天房间
+      socket.on('joinChat', (chatId) => {
+        socket.join(chatId); // 用户加入特定的聊天房间
+        console.log(`User ${socket.id} joined chat: ${chatId}`);
+      });
+
+      // 监听消息发送事件
+      socket.on('sendMessage', async (data) => {
+        const { chatId, message, sender } = data;
+        
+        // 将消息存储到 MongoDB 中
+        try {
+          await addMessageToChat(chatId, sender, message);
+          
+          // 广播消息到该聊天房间的所有用户
+          io.to(chatId).emit('newMessage', { sender, message, timestamp: new Date() });
+        } catch (error) {
+          console.error('Error saving message to DB:', error);
+        }
+      });
+
+      // 监听用户离开房间
+      socket.on('leaveChat', (chatId) => {
+        socket.leave(chatId); // 用户离开指定的聊天房间
+        console.log(`User ${socket.id} left chat: ${chatId}`);
+      });
+
+      // 监听用户断开连接
+      socket.on('disconnect', () => {
+        console.log('User disconnected:', socket.id);
+      });
+    });
+
+    // 启动服务器
+    server.listen(port, () => {
+      console.log(`Server is running on http://localhost:${port}`);
+      console.log(`Swagger API docs available at http://localhost:${port}/api-docs`);
+    });
   })
   .catch(error => console.error('Failed to connect to the database', error));
 
@@ -110,13 +124,5 @@ setupSwagger(app);
 app.get('/', (req, res) => {
   res.send('Welcome to the Movie Rental API');
 });
-
-// 启动服务器，仅在非测试环境下
-if (process.env.NODE_ENV !== 'test') {
-  server.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
-    console.log(`Swagger API docs available at http://localhost:${port}/api-docs`);
-  });
-}
 
 export { app };
