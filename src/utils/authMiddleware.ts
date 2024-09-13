@@ -13,6 +13,7 @@ export const authenticateJWT = (req: CustomRequest, res: Response, next: NextFun
 
     jwt.verify(token, process.env.JWT_SECRET || 'secretKey', (err, decoded) => {
       if (err) {
+        console.log('Token verification failed:', err);
         return res.status(403).json({ message: 'Invalid or expired token' });
       }
 

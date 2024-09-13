@@ -6,21 +6,42 @@ const router = express.Router();
 
 /**
  * @swagger
+ * tags:
+ *   name: Users
+ *   description: 用户管理相关的 API
+ */
+
+/**
+ * @swagger
  * /api/users/me:
  *   get:
- *     summary: 获取当前用户的信息
+ *     summary: 获取当前登录用户的信息
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
+ *     description: 返回当前用户的用户名和邮箱信息。该请求需要 JWT 认证。
  *     responses:
  *       200:
- *         description: 当前用户信息
+ *         description: 返回当前用户的信息
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 username:
+ *                   type: string
+ *                   description: 用户名
+ *                 email:
+ *                   type: string
+ *                   description: 用户邮箱
  *       401:
- *         description: Unauthorized
+ *         description: 未授权，用户未登录或令牌无效
+ *       500:
+ *         description: 服务器错误
  */
 router.get('/me', authenticateJWT, (req: any, res) => {
   try {
-    // 断言 req 类型为 CustomRequest，确保能访问 user
+    
     const user = req.user;
 
     if (!user) {
@@ -28,7 +49,7 @@ router.get('/me', authenticateJWT, (req: any, res) => {
     }
 
     res.json({
-      username: (user as JwtPayload).username,  // 如果 user 是 JwtPayload，可以访问它的属性
+      username: (user as JwtPayload).username,  
       email: (user as JwtPayload).email,
     });
   } catch (error) {

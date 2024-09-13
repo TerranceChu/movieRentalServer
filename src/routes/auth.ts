@@ -38,36 +38,58 @@ const router = express.Router();
  *     responses:
  *       201:
  *         description: User registered successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "User registered successfully"
+ *                 userId:
+ *                   type: string
+ *                   example: "60c72b2f9b1e8a72b8d6e3b1"
  *       400:
  *         description: Username and password are required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Username and password are required"
  *       500:
  *         description: Error registering user
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Error registering user"
  */
 router.post('/register', async (req, res) => {
-  const { username, password, role } = req.body; // 获取注册时提供的角色
+  const { username, password, role } = req.body;
 
   if (!username || !password) {
     return res.status(400).json({ message: 'Username and password are required' });
   }
 
   try {
-    // 检查用户是否已存在
     const user = await req.app.locals.db.collection('users').findOne({ username });
     if (user) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // 加密密码
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    // 如果角色未指定，默认设置为 'user'
     const newUser = {
       username,
       password: hashedPassword,
-      role: role || 'user',  // 如果没有提供角色，默认为普通用户
+      role: role || 'user',
     };
 
-    // 将新用户存入数据库
     const result = await req.app.locals.db.collection('users').insertOne(newUser);
 
     res.status(201).json({ message: 'User registered successfully', userId: result.insertedId });
@@ -99,14 +121,57 @@ router.post('/register', async (req, res) => {
  *     responses:
  *       200:
  *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Login successful"
+ *                 token:
+ *                   type: string
+ *                   example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
  *       400:
  *         description: Username and password are required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Username and password are required"
  *       401:
  *         description: Invalid credentials
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Invalid credentials"
  *       404:
  *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "User not found"
  *       500:
  *         description: Error logging in
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Error logging in"
  */
 router.post('/login', async (req, res) => {
   const { username, password } = req.body;
@@ -116,28 +181,24 @@ router.post('/login', async (req, res) => {
   }
 
   try {
-    // 查找用户
     const user = await req.app.locals.db.collection('users').findOne({ username });
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // 验证密码
     const validPassword = await bcrypt.compare(password, user.password);
 
     if (!validPassword) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // 生成 JWT，包含用户 ID、用户名和角色
     const token = jwt.sign(
-      { userId: user._id, username: user.username, role: user.role },  // 包含用户角色
+      { userId: user._id, username: user.username, role: user.role },
       process.env.JWT_SECRET || 'secretKey',
       { expiresIn: '1h' }
     );
 
-    // 返回登录成功信息及 JWT
     res.json({ message: 'Login successful', token });
   } catch (error) {
     res.status(500).json({ message: 'Error logging in' });

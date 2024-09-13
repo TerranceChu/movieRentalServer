@@ -90,10 +90,9 @@ MongoClient.connect(mongoUri)
       });
 
       // 监听用户离开聊天房间
-// 不再发送消息，仅处理用户离开事件
-socket.on('leaveChat', (chatId) => {
-  socket.leave(chatId); // 仅让用户离开房间
-});
+      socket.on('leaveChat', (chatId) => {
+        socket.leave(chatId); 
+      });
 
       // 监听用户断开连接
       socket.on('disconnect', () => {
@@ -110,11 +109,11 @@ socket.on('leaveChat', (chatId) => {
   .catch(error => console.error('Failed to connect to the database', error));
 
 // 设置应用的路由
-app.use('/api/applications', applicationsRouter); // 申请相关的API路由
-app.use('/api/movies', moviesRouter); // 电影相关的API路由，如果需要
+app.use('/api/applications', applicationsRouter); 
+app.use('/api/movies', moviesRouter); 
 app.use('/api/auth', authRouter);
-app.use('/api/users', userRouter); // 授权相关的API路由
-app.use('/api/chats', chatRouter); // 添加聊天功能的API路由
+app.use('/api/users', userRouter); 
+app.use('/api/chats', chatRouter); 
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // 初始化Swagger文档
